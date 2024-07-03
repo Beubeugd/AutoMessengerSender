@@ -4,6 +4,9 @@ import pyautogui
 import pyperclip
 import time
 
+# Définition de la liste globale pour les liens
+links = []
+
 def add_link():
     link = link_entry.get().strip()
     if link:
@@ -14,6 +17,8 @@ def add_link():
         messagebox.showerror("Error", "Please enter a valid link.")
 
 def load_links_from_file():
+    global links  # Utilisation de la liste globale
+    
     file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
     if file_path:
         try:
@@ -31,25 +36,6 @@ def remove_link():
     if selected_index:
         links.pop(selected_index[0])
         listbox.delete(selected_index)
-
-def finish_input():
-    global links
-    link_input_window.destroy()
-
-def save_links_to_file():
-    filename = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt")])
-    if filename:
-        try:
-            with open(filename, 'w', encoding='utf-8') as file:
-                file.write(','.join(links))
-            messagebox.showinfo("Information", f"Messenger links have been saved in {filename}.")
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred while saving the links: {str(e)}")
-
-def browse_links_file():
-    filename = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
-    json_entry.delete(0, tk.END)
-    json_entry.insert(0, filename)
 
 def browse_message_file():
     filename = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
@@ -93,25 +79,19 @@ def type_links(links, message):
             time.sleep(0.4)
 
 def start_typing():
-    filename = json_entry.get()
-    message_file = message_entry.get()
+    global links  # Utilisation de la liste globale
+    
+    filename = message_entry.get()  # Utilisation de message_entry pour le fichier de message
+
+    if not links:
+        messagebox.showerror("Error", "No links to type. Please load links first.")
+        return
 
     if not filename:
-        messagebox.showerror("Error", "Please select a text file with links.")
-        return
-    
-    links = load_links_from_text(filename)
-    links = remove_https_prefix(links)
-    
-    if not links:
-        messagebox.showerror("Error", "No links found in the text file.")
-        return
-
-    if not message_file:
         messagebox.showerror("Error", "Please select a text file for the message.")
         return
 
-    with open(message_file, 'r', encoding='utf-8') as file:
+    with open(filename, 'r', encoding='utf-8') as file:
         message = file.read().strip()
 
     type_links(links, message)
@@ -122,8 +102,6 @@ app.title("Auto Typer")
 app.configure(bg='#222831')  # Background color for the main window
 
 # Collecting Messenger links section
-links = []
-
 tk.Label(app, text="Enter your Messenger links below:", bg='#222831', fg='#ffffff', font=('Arial', 12)).grid(row=0, column=0, columnspan=3, padx=10, pady=10)
 
 entry_frame = tk.Frame(app, bg='#e6e6e6', padx=50, pady=5)
@@ -138,22 +116,14 @@ tk.Button(app, text="Remove Selected Link", command=remove_link, bg='#30475e', f
 listbox = tk.Listbox(app, width=130, height=10, bg='#30475e', fg='#ffffff', borderwidth=0, highlightthickness=0)
 listbox.grid(row=3, column=0, columnspan=3, padx=10, pady=10)
 
-tk.Button(app, text="Save", command=save_links_to_file, bg='#30475e', fg='#ffffff', relief=tk.FLAT, padx=10, pady=5, borderwidth=0, highlightthickness=0).grid(row=4, column=0, columnspan=3, padx=10, pady=10)
-
-# Text file entry for links
-tk.Label(app, text="Select text file with links:", bg='#222831', fg='#ffffff', font=('Arial', 12)).grid(row=5, column=0, padx=10, pady=10)
-json_entry = tk.Entry(app, width=50, bg='#30475e', fg='#ffffff', borderwidth=0, highlightthickness=0)
-json_entry.grid(row=5, column=1, padx=10, pady=10)
-tk.Button(app, text="Browse", command=browse_links_file, bg='#30475e', fg='#ffffff', relief=tk.FLAT, padx=10, pady=5, borderwidth=0, highlightthickness=0).grid(row=5, column=2, padx=10, pady=10)
-
 # Text file entry for message
-tk.Label(app, text="Select text file with message:", bg='#222831', fg='#ffffff', font=('Arial', 12)).grid(row=6, column=0, padx=10, pady=10)
+tk.Label(app, text="Select text file with message:", bg='#222831', fg='#ffffff', font=('Arial', 12)).grid(row=5, column=0, padx=10, pady=10)
 message_entry = tk.Entry(app, width=50, bg='#30475e', fg='#ffffff', borderwidth=0, highlightthickness=0)
-message_entry.grid(row=6, column=1, padx=10, pady=10)
-tk.Button(app, text="Browse", command=browse_message_file, bg='#30475e', fg='#ffffff', relief=tk.FLAT, padx=10, pady=5, borderwidth=0, highlightthickness=0).grid(row=6, column=2, padx=10, pady=10)
+message_entry.grid(row=5, column=1, padx=10, pady=10)
+tk.Button(app, text="Browse", command=browse_message_file, bg='#30475e', fg='#ffffff', relief=tk.FLAT, padx=10, pady=5, borderwidth=0, highlightthickness=0).grid(row=5, column=2, padx=10, pady=10)
 
 # Start typing button
-tk.Button(app, text="Start typing", command=start_typing, bg='#30475e', fg='#ffffff', relief=tk.FLAT, padx=10, pady=5, borderwidth=0, highlightthickness=0).grid(row=7, column=0, columnspan=3, pady=20)
+tk.Button(app, text="Start typing", command=start_typing, bg='#30475e', fg='#ffffff', relief=tk.FLAT, padx=10, pady=5, borderwidth=0, highlightthickness=0).grid(row=6, column=0, columnspan=3, pady=20)
 
 # Launch main loop
 app.mainloop()
